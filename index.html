@@ -436,8 +436,9 @@ function renderBox(data) {
   let html = `<div class="ghead"><div><div class="sub ${s.state === "in" ? "live" : ""}">${esc(sub)}</div><h2>${title}</h2></div>${qt}</div>`;
 
   // Game flow (or the pre-game win chance)
+  // (before tip-off there is no box score, so the win chance stays at the top)
   const flow = pre ? predictor(data, away, home) : flowChart(data, away, home, s);
-  html += flow.html;
+  if (pre) html += flow.html;
 
   // Box scores
   const teams = data.boxscore?.players || [];
@@ -446,6 +447,9 @@ function renderBox(data) {
   const ordered = [...teams].sort((x, y) => (x.team?.id === home.team?.id) - (y.team?.id === home.team?.id));
   if (teams.length) html += ordered.map(t => teamTable(t, lmap[t.team?.id] || [])).join("");
   else if (pre) html += `<div class="empty"><strong>Not started yet</strong>Player stats show here after tip-off.</div>`;
+
+  // Game flow goes below the box scores
+  if (!pre) html += flow.html;
 
   // Team stats
   html += teamStats(data, away, home, pre);
