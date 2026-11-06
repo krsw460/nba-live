@@ -529,7 +529,9 @@ function flowChart(data, away, home, s) {
       let best = pts[0];
       for (const q of pts) { if (Math.abs(q.t - t) < Math.abs(best.t - t)) best = q; }
       const p = best.p, who = best.v >= .5 ? ha : aa, c = Math.round(Math.max(best.v, 1 - best.v) * 100);
-      tip.textContent = `${perName(p.period?.number || 1)} ${p.clock?.displayValue ?? ""}: ${aa} ${p.awayScore ?? ""}, ${ha} ${p.homeScore ?? ""}. ${who} ${c}%`;
+      const clk = String(p.clock?.displayValue ?? ""), pn = perName(p.period?.number || 1);
+      const when = /^0(:00|\.0)?$/.test(clk) ? `End of ${pn}` : `${pn} ${clk}`;
+      tip.textContent = `${when}: ${aa} ${p.awayScore ?? ""}, ${ha} ${p.homeScore ?? ""}. ${who} ${c}%`;
       tip.style.display = "block";
       tip.style.left = `${34 + (best.t / total) * r.width}px`;
       cur.setAttribute("x1", X(best.t)); cur.setAttribute("x2", X(best.t)); cur.style.display = "";
