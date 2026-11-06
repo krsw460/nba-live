@@ -90,11 +90,11 @@
   .empty strong { display: block; color: var(--chalk); font: 800 24px/1.2 var(--display); margin-bottom: 4px; }
 
   /* ---------- Detail ---------- */
-  .detail { min-width: 0; }
+  .detail { min-width: 0; container-type: inline-size; }
   .placeholder { border: 1px dashed var(--rail); border-radius: 14px; }
 
   .tron { border-radius: 16px; overflow: hidden; position: relative;
-    display: grid; grid-template-columns: 1fr auto 1fr; align-items: stretch; min-height: 170px; }
+    display: grid; grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); align-items: stretch; min-height: 170px; }
   .tron .side { position: relative; display: flex; align-items: center; gap: 16px; padding: 22px 26px; }
   .tron .side::before { content: ""; position: absolute; inset: 0; background: linear-gradient(rgba(0,0,0,.28), rgba(0,0,0,.45)); }
   .tron .side > * { position: relative; }
@@ -102,7 +102,7 @@
   .tron img { width: 64px; height: 64px; object-fit: contain; filter: drop-shadow(0 2px 6px rgba(0,0,0,.4)); }
   .tron .tn { font: 800 26px/1 var(--display); text-transform: none; }
   .tron .tr { font-size: 13px; opacity: .85; margin-top: 4px; }
-  .tron .big { font: 900 84px/.9 var(--display); margin-left: auto; letter-spacing: -1px; }
+  .tron .big { font: 900 clamp(56px, 9cqi, 88px)/.9 var(--display); margin-left: auto; letter-spacing: -1px; }
   .tron .home .big { margin-left: 0; margin-right: auto; }
   .tron .dim .big { opacity: .55; }
   .tron .mid { background: var(--arena); display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -110,10 +110,11 @@
   .tron .clock { font: 800 28px/1 var(--display); color: var(--chalk); }
   .tron .clock.live { color: var(--led); text-shadow: 0 0 12px rgba(255,176,32,.45); }
   .tron .sub { font-size: 12.5px; color: var(--mute); margin-top: 6px; }
-  @media (max-width: 640px) {
+  @container (max-width: 700px) {
     .tron { grid-template-columns: 1fr 1fr; }
     .tron .mid { grid-column: 1 / -1; grid-row: 1; flex-direction: row; gap: 10px; padding: 10px; }
     .tron .mid .sub { margin: 0; }
+    .tron .side > div:not(.big) { min-width: 0; }
     .tron .side { flex-direction: column; align-items: flex-start; gap: 8px; padding: 16px; }
     .tron .home { align-items: flex-end; }
     .tron .big, .tron .home .big { margin: 0; font-size: 60px; }
@@ -427,7 +428,7 @@ function renderBox(data) {
         use.map(c => { const l = c.leaders?.[0]; if (!l) return "";
           const num = (l.displayValue || "").match(/^\d+/)?.[0] || l.displayValue || "";
           const rest = (l.displayValue || "").replace(/^\d+\s*/, "");
-          return `<div class="lrow"><span class="c">${esc(c.displayName)}</span><span class="w">${esc(l.athlete?.displayName || l.athlete?.shortName)}</span><span class="v">${esc(num)}<small>${esc(rest)}</small></span></div>`;
+          return `<div class="lrow"><span class="c">${esc(c.displayName)}</span><span class="w">${esc(l.athlete?.shortName || l.athlete?.displayName)}</span><span class="v">${esc(num)}<small>${esc(rest)}</small></span></div>`;
         }).join("") + `</div>`;
     }).join("") + `</div></div>`;
   }
