@@ -149,6 +149,56 @@
   .tstats .b { font-weight: 700; }
   .edge { display: inline-flex; align-items: center; gap: 6px; color: var(--mute); }
 
+  /* ---------- Views (Games / Standings) ---------- */
+  .views { display: flex; gap: 2px; background: var(--rule-soft); border-radius: 7px; padding: 2px; }
+  .views button { padding: 4px 12px; border-radius: 5px; color: var(--mute); font-weight: 600; }
+  .views button.on { background: var(--bg); color: var(--ink); box-shadow: 0 0 0 1px var(--rule); }
+  body.v-standings .datebox, body.v-standings #today, body.v-standings nav.games, body.v-standings #detail { display: none !important; }
+  body:not(.v-standings) #standings { display: none; }
+
+  /* ---------- Game flow ---------- */
+  .flow { margin-top: 20px; }
+  .sec-h { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 8px; }
+  .sec-h h3 { margin: 0; font-size: 16px; font-weight: 700; }
+  .sec-h .key { font-size: 12.5px; color: var(--mute); display: flex; gap: 14px; flex-wrap: wrap; }
+  .sec-h .key span { display: inline-flex; align-items: center; gap: 6px; }
+  .flow-box { position: relative; padding-left: 34px; }
+  .flow-box svg { display: block; width: 100%; height: 150px; touch-action: pan-y; }
+  .flow-y { position: absolute; left: 0; font-size: 11px; color: var(--mute); transform: translateY(-50%); }
+  .flow-x { position: relative; height: 18px; font-size: 11px; color: var(--mute); }
+  .flow-x span { position: absolute; transform: translateX(-50%); top: 3px; }
+  .tip { position: absolute; top: 0; transform: translate(-50%, calc(-100% - 6px)); background: var(--ink); color: var(--bg);
+    font-size: 12px; padding: 4px 8px; border-radius: 4px; white-space: nowrap; pointer-events: none; display: none; z-index: 2; }
+  .pred { margin-top: 20px; max-width: 560px; }
+  .pred .bar { display: flex; height: 10px; border-radius: 5px; overflow: hidden; gap: 2px; margin: 4px 0; }
+  .pred .lbl { display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; }
+
+  /* ---------- Injuries ---------- */
+  .inj { margin-top: 28px; }
+  .inj-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px 28px; }
+  .inj-t { display: flex; align-items: center; gap: 8px; font-weight: 600; padding-bottom: 4px; border-bottom: 1px solid var(--rule-strong); }
+  .inj-t img { width: 18px; height: 18px; object-fit: contain; }
+  .inj-r { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 10px; padding: 5px 0; border-bottom: 1px solid var(--rule-soft); }
+  .inj-r .who { font-weight: 600; }
+  .inj-r .pos { color: var(--mute); font-size: 12px; margin-left: 5px; font-weight: 400; }
+  .inj-r .st { font-size: 12.5px; font-weight: 600; text-align: right; }
+  .inj-r .st.out { color: var(--minus); }
+  .inj-r .why { grid-column: 1 / -1; font-size: 12.5px; color: var(--mute); }
+  .inj .none { color: var(--mute); padding: 6px 0; }
+
+  /* ---------- Standings ---------- */
+  #standings { flex: 1 1 100%; min-width: 0; padding: 16px 0 48px; }
+  .stand-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 500px), 1fr)); gap: 28px; }
+  .stand table { min-width: 520px; font-family: inherit; }
+  .stand td:first-child, .stand th:first-child { min-width: 170px; }
+  .stand .tm { display: inline-flex; align-items: center; gap: 8px; }
+  .stand .tm img { width: 20px; height: 20px; object-fit: contain; }
+  .stand .seed { color: var(--mute); width: 18px; text-align: right; display: inline-block; }
+  .stand tr.cut td { border-bottom: 1px solid var(--rule-bench); }
+  .stand td.w { color: var(--plus); } .stand td.l { color: var(--minus); }
+  .stand h3 { margin: 0 0 6px; font-size: 16px; font-weight: 700; }
+  .stand-note { font-size: 12.5px; color: var(--mute); margin-top: 14px; }
+
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation: none !important; transition: none !important; }
   }
@@ -158,6 +208,10 @@
 <header>
   <div class="head">
     <h1>NBA Live</h1>
+    <div class="views" role="tablist" aria-label="View">
+      <button role="tab" data-view="games" class="on" aria-selected="true">Games</button>
+      <button role="tab" data-view="standings" aria-selected="false">Standings</button>
+    </div>
     <div class="datebox">
       <button class="icon-btn" id="prev" aria-label="Previous day"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button>
       <label><span id="datetext">Today</span><input type="date" id="date" aria-label="Pick a date"></label>
@@ -178,6 +232,7 @@
 <div class="wrap">
   <nav class="games" id="games" aria-label="Games"></nav>
   <main id="detail" aria-live="polite"></main>
+  <section id="standings" aria-label="Standings"></section>
 </div>
 
 <script>
@@ -366,6 +421,10 @@ function renderBox(data) {
 
   let html = `<div class="ghead"><div><div class="sub ${s.state === "in" ? "live" : ""}">${esc(sub)}</div><h2>${title}</h2></div>${qt}</div>`;
 
+  // Game flow (or the pre-game win chance)
+  const flow = pre ? predictor(data, away, home) : flowChart(data, away, home, s);
+  html += flow.html;
+
   // Box scores
   const teams = data.boxscore?.players || [];
   const lmap = {};
@@ -377,8 +436,178 @@ function renderBox(data) {
   // Team stats
   html += teamStats(data, away, home, pre);
 
+  // Injuries
+  html += injuries(data, away, home);
+
   $("detail").innerHTML = html;
+  if (flow.bind) flow.bind();
 }
+
+// ---------- Game flow chart ----------
+function clockSecs(p) {
+  const per = p?.period?.number || 1;
+  const len = per <= 4 ? 720 : 300;
+  const before = per <= 4 ? (per - 1) * 720 : 2880 + (per - 5) * 300;
+  const c = String(p?.clock?.displayValue ?? "0").split(":");
+  const rem = c.length === 2 ? (+c[0]) * 60 + parseFloat(c[1]) : (parseFloat(c[0]) || 0);
+  return before + Math.max(0, len - rem);
+}
+const perName = (n) => n <= 4 ? `Q${n}` : (n === 5 ? "OT" : `OT${n - 4}`);
+
+function flowChart(data, away, home, s) {
+  const wp = data.winprobability || [];
+  const pm = {};
+  (data.plays || []).forEach(p => { pm[p.id] = p; });
+  const pts = wp.map(w => { const p = pm[w.playId]; return p ? { t: clockSecs(p), v: +w.homeWinPercentage, p } : null; })
+    .filter(x => x && isFinite(x.v)).sort((a, b) => a.t - b.t);
+  if (pts.length < 2) return { html: "" };
+
+  const maxPer = Math.max(4, ...pts.map(x => x.p.period?.number || 1));
+  const total = 2880 + (maxPer - 4) * 300;
+  const W = 1000, H = 150;
+  const X = (t) => (t / total * W).toFixed(1);
+  const Y = (v) => ((1 - v) * H).toFixed(1);
+  const line = pts.map((q, i) => (i ? "L" : "M") + X(q.t) + " " + Y(q.v)).join(" ");
+  const area = `${line} L${X(pts.at(-1).t)} ${H / 2} L${X(pts[0].t)} ${H / 2} Z`;
+  const ch = tcolor(home.team), ca = tcolor(away.team);
+  const ha = esc(home.team?.abbreviation), aa = esc(away.team?.abbreviation);
+  const ends = [];
+  for (let k = 1; k < maxPer; k++) ends.push(k < 4 ? k * 720 : 2880 + (k - 4) * 300);
+  const last = pts.at(-1);
+  const lead = last.v >= .5 ? ha : aa, pct = Math.round(Math.max(last.v, 1 - last.v) * 100);
+  const now = s.state === "in" ? `${lead} ${pct}% now` : "";
+
+  const html = `<section class="flow">
+    <div class="sec-h"><h3>Game flow</h3><div class="key">
+      <span><span class="chip" style="background:${ch}"></span>${ha} ahead (top)</span>
+      <span><span class="chip" style="background:${ca}"></span>${aa} ahead (bottom)</span>
+      <span>Win chance, from ESPN${now ? `. <strong style="color:var(--ink)">${now}</strong>` : ""}</span></div></div>
+    <div class="flow-box" id="flowbox">
+      <span class="flow-y" style="top:8px">${ha}</span><span class="flow-y" style="top:75px">50%</span><span class="flow-y" style="top:142px">${aa}</span>
+      <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Win chance through the game. ${now || (lead + " won")}">
+        <defs><clipPath id="ftop"><rect x="0" y="0" width="${W}" height="${H / 2}"/></clipPath><clipPath id="fbot"><rect x="0" y="${H / 2}" width="${W}" height="${H / 2}"/></clipPath></defs>
+        <rect x="0" y="0" width="${W}" height="${H}" fill="var(--rule-soft)"/>
+        ${ends.map(t => `<line x1="${X(t)}" x2="${X(t)}" y1="0" y2="${H}" stroke="var(--rule)" vector-effect="non-scaling-stroke"/>`).join("")}
+        <path d="${area}" fill="${ch}" fill-opacity=".35" clip-path="url(#ftop)"/>
+        <path d="${area}" fill="${ca}" fill-opacity=".35" clip-path="url(#fbot)"/>
+        <line x1="0" x2="${W}" y1="${H / 2}" y2="${H / 2}" stroke="var(--mute)" stroke-dasharray="4 4" vector-effect="non-scaling-stroke"/>
+        <path d="${line}" fill="none" stroke="var(--ink)" stroke-width="2" vector-effect="non-scaling-stroke"/>
+        <line id="flowcur" x1="0" x2="0" y1="0" y2="${H}" stroke="var(--ink)" stroke-width="1" vector-effect="non-scaling-stroke" style="display:none"/>
+      </svg>
+      <div class="tip" id="flowtip"></div>
+      <div class="flow-x">${Array.from({ length: maxPer }, (_, i) => {
+        const a = i < 4 ? i * 720 : 2880 + (i - 4) * 300, b = i < 3 ? (i + 1) * 720 : (i === 3 ? 2880 : a + 300);
+        return `<span style="left:${((a + b) / 2 / total * 100).toFixed(2)}%">${perName(i + 1)}</span>`; }).join("")}</div>
+    </div></section>`;
+
+  const bind = () => {
+    const box = document.getElementById("flowbox");
+    const svg = box?.querySelector("svg"), tip = document.getElementById("flowtip"), cur = document.getElementById("flowcur");
+    if (!svg) return;
+    const show = (e) => {
+      const r = svg.getBoundingClientRect();
+      const f = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
+      const t = f * total;
+      let best = pts[0];
+      for (const q of pts) { if (Math.abs(q.t - t) < Math.abs(best.t - t)) best = q; }
+      const p = best.p, who = best.v >= .5 ? ha : aa, c = Math.round(Math.max(best.v, 1 - best.v) * 100);
+      tip.textContent = `${perName(p.period?.number || 1)} ${p.clock?.displayValue ?? ""}: ${aa} ${p.awayScore ?? ""}, ${ha} ${p.homeScore ?? ""}. ${who} ${c}%`;
+      tip.style.display = "block";
+      tip.style.left = `${34 + (best.t / total) * r.width}px`;
+      cur.setAttribute("x1", X(best.t)); cur.setAttribute("x2", X(best.t)); cur.style.display = "";
+    };
+    const hide = () => { tip.style.display = "none"; cur.style.display = "none"; };
+    svg.addEventListener("pointermove", show);
+    svg.addEventListener("pointerdown", show);
+    svg.addEventListener("pointerleave", hide);
+  };
+  return { html, bind };
+}
+
+function predictor(data, away, home) {
+  const pr = data.predictor;
+  if (!pr) return { html: "" };
+  const hp = num(pr.homeTeam?.gameProjection), ap = num(pr.awayTeam?.gameProjection);
+  if (!isFinite(hp) || !isFinite(ap)) return { html: "" };
+  const ch = tcolor(home.team), ca = tcolor(away.team);
+  return { html: `<section class="pred"><div class="sec-h"><h3>Win chance before the game</h3><div class="key"><span>From ESPN</span></div></div>
+    <div class="lbl"><span>${esc(away.team?.abbreviation)} ${Math.round(ap)}%</span><span>${esc(home.team?.abbreviation)} ${Math.round(hp)}%</span></div>
+    <div class="bar" role="img" aria-label="${esc(away.team?.abbreviation)} ${Math.round(ap)} percent, ${esc(home.team?.abbreviation)} ${Math.round(hp)} percent">
+      <span style="flex:${ap} 1 0;background:${ca}"></span><span style="flex:${hp} 1 0;background:${ch}"></span></div></section>` };
+}
+
+// ---------- Injuries ----------
+function injuries(data, away, home) {
+  const list = data.injuries || [];
+  if (!list.some(t => (t.injuries || []).length)) return "";
+  const find = (side) => list.find(t => t.team?.id === side.team?.id) || list.find(t => t.team?.abbreviation === side.team?.abbreviation);
+  const day = (d) => { const m = String(d || "").match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? new Date(+m[1], +m[2] - 1, +m[3]).toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" }) : ""; };
+  const col = (side) => {
+    const t = find(side);
+    const inj = [...(t?.injuries || [])].sort((a, b) => /out/i.test(b.status) - /out/i.test(a.status));
+    const rows = inj.map(i => {
+      const d = i.details || {};
+      const st = i.status || d.fantasyStatus?.displayDescription || "";
+      const what = [d.side && d.type ? `${d.side} ${String(d.type).toLowerCase()}` : d.type, d.detail ? String(d.detail).toLowerCase() : ""].filter(Boolean).join(", ");
+      const back = d.returnDate ? `Expected back ${day(d.returnDate)}` : "";
+      const why = [what ? what.replace(/^\w/, c => c.toUpperCase()) : "", back].filter(Boolean).join(". ");
+      return `<div class="inj-r"><span><span class="who">${esc(i.athlete?.shortName || i.athlete?.displayName)}</span><span class="pos">${esc(i.athlete?.position?.abbreviation)}</span></span>
+        <span class="st ${/out/i.test(st) ? "out" : ""}">${esc(st)}</span>${why ? `<span class="why">${esc(why)}</span>` : ""}</div>`;
+    }).join("") || `<div class="none">No injuries listed.</div>`;
+    return `<div><div class="inj-t"><img src="${esc(logo(side.team))}" alt="" width="18" height="18">${esc(side.team?.displayName || side.team?.abbreviation)}</div>${rows}</div>`;
+  };
+  return `<section class="inj"><div class="sec-h"><h3>Injury report</h3><div class="key"><span>From ESPN. Return dates are estimates.</span></div></div>
+    <div class="inj-grid">${col(away)}${col(home)}</div></section>`;
+}
+
+// ---------- Standings ----------
+let standData = null, standAt = 0;
+async function loadStandings() {
+  const box = $("standings");
+  if (standData && Date.now() - standAt < 10 * 60 * 1000) { renderStandings(standData); return; }
+  if (!standData) box.innerHTML = `<div class="empty">Loading standings</div>`;
+  try {
+    standData = await getJSON("https://site.api.espn.com/apis/v2/sports/basketball/nba/standings");
+    standAt = Date.now();
+    renderStandings(standData);
+  } catch (e) {
+    box.innerHTML = `<div class="empty"><strong>Standings did not load</strong>${esc(e.message)}. Click Standings again to retry.</div>`;
+  }
+}
+function renderStandings(sj) {
+  const stat = (e, type) => (e.stats || []).find(x => x.type === type);
+  const dv = (e, type) => stat(e, type)?.displayValue ?? "";
+  const confs = (sj.children || []).map(c => {
+    const rows = [...(c.standings?.entries || [])].sort((a, b) => (num(dv(a, "playoffseed")) || 99) - (num(dv(b, "playoffseed")) || 99));
+    const body = rows.map(e => {
+      const seed = num(dv(e, "playoffseed"));
+      const strk = dv(e, "streak");
+      let diff = dv(e, "differential");
+      if (num(diff) > 0 && !/^\+/.test(diff)) diff = "+" + diff;
+      return `<tr class="${seed === 6 || seed === 10 ? "cut" : ""}">
+        <td><span class="tm"><span class="seed">${isFinite(seed) ? seed : ""}</span><img src="${esc(logo(e.team))}" alt="" width="20" height="20">${esc(e.team?.shortDisplayName || e.team?.displayName)}</span></td>
+        <td>${esc(dv(e, "wins"))}</td><td>${esc(dv(e, "losses"))}</td><td>${esc(dv(e, "winpercent"))}</td><td>${esc(dv(e, "gamesbehind"))}</td>
+        <td>${esc(dv(e, "home"))}</td><td>${esc(dv(e, "road"))}</td><td>${esc(dv(e, "lasttengames"))}</td>
+        <td class="${/^W/.test(strk) ? "w" : /^L/.test(strk) ? "l" : ""}">${esc(strk)}</td>
+        <td class="${num(diff) > 0 ? "w" : num(diff) < 0 ? "l" : ""}">${esc(diff)}</td></tr>`;
+    }).join("");
+    return `<div class="stand"><h3>${esc(c.name)}</h3><div class="scroll"><table>
+      <thead><tr><th>Team</th><th>W</th><th>L</th><th>PCT</th><th>GB</th><th>Home</th><th>Road</th><th>Last 10</th><th>Streak</th><th title="Average point difference">Diff</th></tr></thead>
+      <tbody>${body}</tbody></table></div></div>`;
+  }).join("");
+  $("standings").innerHTML = `<div class="stand-grid">${confs}</div>
+    <p class="stand-note">Seeds 1–6 go to the playoffs. Seeds 7–10 go to the play-in games. Diff is the average point difference per game. Updated ${new Date(standAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}.</p>`;
+}
+
+// ---------- View switch ----------
+function setView(v) {
+  document.body.classList.toggle("v-standings", v === "standings");
+  document.querySelectorAll(".views button").forEach(b => { const on = b.dataset.view === v; b.classList.toggle("on", on); b.setAttribute("aria-selected", on); });
+  try { history.replaceState(null, "", v === "standings" ? "#standings" : location.pathname + location.search); } catch (e) {}
+  if (v === "standings") loadStandings();
+}
+document.querySelectorAll(".views button").forEach(b => b.onclick = () => setView(b.dataset.view));
+window.addEventListener("hashchange", () => setView(location.hash === "#standings" ? "standings" : "games"));
 
 function teamTable(t, leaders) {
   const g = t.statistics?.[0];
@@ -467,6 +696,7 @@ $("refresh").onclick = () => loadScores();
 document.addEventListener("visibilitychange", () => { if (!document.hidden) loadScores(); });
 
 applyTheme(theme(), false);
+if (location.hash === "#standings") setView("standings");
 loadScores();
 
 /* Data: ESPN's free, unofficial API (no key). It can change without notice. */
