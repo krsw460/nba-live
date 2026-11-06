@@ -302,6 +302,19 @@ function tcolor(team) {
   const ok = theme() === "dark" ? (c) => lum(c) > .06 : (c) => lum(c) < .7;
   return opts.find(ok) || opts[0] || "#9AA1AE";
 }
+// Two team colours that can be told apart (when both teams are red, say, use another colour)
+function pair(awayTeam, homeTeam) {
+  const rgb = (h) => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+  const far = (a, b) => { const x = rgb(a), y = rgb(b); return Math.hypot(x[0] - y[0], x[1] - y[1], x[2] - y[2]) > 110; };
+  const ok = theme() === "dark" ? (c) => lum(c) > .06 : (c) => lum(c) < .7;
+  const all = (t) => [t?.color, t?.alternateColor].filter(Boolean).map(c => "#" + c).filter(ok);
+  const ch = tcolor(homeTeam);
+  let ca = tcolor(awayTeam);
+  if (!far(ca, ch)) {
+    ca = all(awayTeam).find(c => far(c, ch)) || (theme() === "dark" ? "#BFAE9F" : "#5B6170");
+  }
+  return [ca, ch];
+}
 const num = (v) => { const m = String(v ?? "").match(/^[+-]?\d+(\.\d+)?/); return m ? parseFloat(m[0]) : NaN; };
 function sides(comp) {
   const c = comp?.competitors || [];
@@ -412,7 +425,8 @@ function renderBox(data) {
   if (nq) {
     const heads = Array.from({ length: nq }, (_, i) => i < 4 ? String(i + 1) : (nq > 5 ? `OT${i - 3}` : "OT"));
     const cols = `60px repeat(${nq + 1}, minmax(28px, 1fr))`;
-    const row = (t, mine, theirs) => `<span class="row tm"><span class="chip" style="background:${tcolor(t.team)}"></span>${esc(t.team?.abbreviation)}</span>` +
+    const qc = pair(away.team, home.team);
+    const row = (t, mine, theirs) => `<span class="row tm"><span class="chip" style="background:${t === away ? qc[0] : qc[1]}"></span>${esc(t.team?.abbreviation)}</span>` +
       Array.from({ length: nq }, (_, i) => { const v = mine[i] ?? ""; const w = v !== "" && +v > +(theirs[i] ?? -1); return `<span class="row ${w ? "qw" : ""}">${esc(v)}</span>`; }).join("") +
       `<span class="row tot">${esc(t.score)}</span>`;
     qt = `<div class="qt"><div class="qgrid" style="grid-template-columns:${cols}"><span class="hd"></span>${heads.map(x => `<span class="hd">${x}</span>`).join("")}<span class="hd">T</span>
@@ -469,7 +483,7 @@ function flowChart(data, away, home, s) {
   const Y = (v) => ((1 - v) * H).toFixed(1);
   const line = pts.map((q, i) => (i ? "L" : "M") + X(q.t) + " " + Y(q.v)).join(" ");
   const area = `${line} L${X(pts.at(-1).t)} ${H / 2} L${X(pts[0].t)} ${H / 2} Z`;
-  const ch = tcolor(home.team), ca = tcolor(away.team);
+  const [ca, ch] = pair(away.team, home.team);
   const ha = esc(home.team?.abbreviation), aa = esc(away.team?.abbreviation);
   const ends = [];
   for (let k = 1; k < maxPer; k++) ends.push(k < 4 ? k * 720 : 2880 + (k - 4) * 300);
@@ -529,7 +543,7 @@ function predictor(data, away, home) {
   if (!pr) return { html: "" };
   const hp = num(pr.homeTeam?.gameProjection), ap = num(pr.awayTeam?.gameProjection);
   if (!isFinite(hp) || !isFinite(ap)) return { html: "" };
-  const ch = tcolor(home.team), ca = tcolor(away.team);
+  const [ca, ch] = pair(away.team, home.team);
   return { html: `<section class="pred"><div class="sec-h"><h3>Win chance before the game</h3><div class="key"><span>From ESPN</span></div></div>
     <div class="lbl"><span>${esc(away.team?.abbreviation)} ${Math.round(ap)}%</span><span>${esc(home.team?.abbreviation)} ${Math.round(hp)}%</span></div>
     <div class="bar" role="img" aria-label="${esc(away.team?.abbreviation)} ${Math.round(ap)} percent, ${esc(home.team?.abbreviation)} ${Math.round(hp)} percent">
@@ -547,7 +561,7 @@ function injuries(data, away, home) {
     const inj = [...(t?.injuries || [])].sort((a, b) => /out/i.test(b.status) - /out/i.test(a.status));
     const rows = inj.map(i => {
       const d = i.details || {};
-      const st = i.status || d.fantasyStatus?.displayDescription || "";
+      const st = String(i.status || d.fantasyStatus?.displayDescription || "").toLowerCase().replace(/^\w/, c => c.toUpperCase());
       const what = [d.side && d.type ? `${d.side} ${String(d.type).toLowerCase()}` : d.type, d.detail && !/not specified/i.test(d.detail) ? String(d.detail).toLowerCase() : ""].filter(Boolean).join(", ");
       const back = d.returnDate ? `Expected back ${day(d.returnDate)}` : "";
       const why = [what ? what.replace(/^\w/, c => c.toUpperCase()) : "", back].filter(Boolean).join(". ");
@@ -667,7 +681,7 @@ function teamStats(data, away, home, pre) {
     ["pointsInPaint", "Points in the paint"], ["fastBreakPoints", "Fast break points"], ["largestLead", "Largest lead"], ["fouls", "Fouls", true]
   ];
   const find = (T, n) => (T.statistics || []).find(x => x.name === n);
-  const ca = tcolor(A.team), ch = tcolor(H.team);
+  const [ca, ch] = pair(A.team, H.team);
   const rows = pick.map(([n, label, low]) => {
     const sa = find(A, n), sh = find(H, n);
     if (!sa || !sh) return "";
