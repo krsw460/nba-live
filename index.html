@@ -28,12 +28,13 @@
     color-scheme: light;
   }
   [data-theme="dark"] {
-    --bg: #14171C; --ink: #E7EAF0; --mute: #A3AAB8; --faint: #6B7280;
-    --rule: #2A2F38; --rule-soft: #22262E; --rule-strong: #E7EAF0; --rule-bench: #59606E;
-    --sel: #1F2633; --accent: #7AA7FF; --live: #FF8A5C;
-    --heat: 255, 196, 0; --heat-max: .30; --qwin: rgba(255, 196, 0, .20);
-    --plus: #5BD08A; --minus: #FF8A80;
-    --err-bg: #3A1F1D; --err-ink: #FFC4BD; --err-rule: #6E2E28;
+    /* Hardwood night */
+    --bg: #1A1411; --ink: #F2E8DF; --mute: #BFAE9F; --faint: #7D6D61;
+    --rule: #3A2E27; --rule-soft: #2A211C; --rule-strong: #F2E8DF; --rule-bench: #5E4F45;
+    --sel: #33261F; --accent: #FF9A4D; --live: #FF6F61;
+    --heat: 255, 128, 40; --heat-max: .36; --qwin: rgba(255, 128, 40, .20);
+    --plus: #8BD17C; --minus: #FF8A7A;
+    --err-bg: #3A1F1A; --err-ink: #FFC9BD; --err-rule: #6E3A2E;
     color-scheme: dark;
   }
   * { box-sizing: border-box; }
@@ -192,7 +193,7 @@ const theme = () => document.documentElement.dataset.theme;
 // ---------- Theme ----------
 function applyTheme(t, save) {
   document.documentElement.dataset.theme = t;
-  document.querySelector('meta[name="theme-color"]').content = t === "dark" ? "#14171C" : "#FFFFFF";
+  document.querySelector('meta[name="theme-color"]').content = t === "dark" ? "#1A1411" : "#FFFFFF";
   $("theme").setAttribute("aria-label", t === "dark" ? "Switch to light mode" : "Switch to dark mode");
   if (save) { try { localStorage.setItem("nba-theme", t); } catch (e) {} }
   // team colours depend on the theme: draw again
