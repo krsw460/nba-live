@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NBA Live</title>
+<style>
+  :root {
+    --bg: #0e1117; --panel: #161b22; --panel2: #1c2330; --line: #2a3242;
+    --text: #e6edf3; --muted: #8b949e; --live: #ff4d4f; --win: #ffffff; --accent: #4ea1ff;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font: 14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+  header { position: sticky; top: 0; z-index: 5; background: rgba(14,17,23,.95);
+    border-bottom: 1px solid var(--line); padding: 10px 16px;
+    display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  h1 { font-size: 18px; margin: 0 12px 0 0; letter-spacing: .5px; }
+  button, input[type=date] { background: var(--panel2); color: var(--text); border: 1px solid var(--line);
+    border-radius: 8px; padding: 6px 10px; font: inherit; cursor: pointer; }
+  button:hover { border-color: var(--accent); }
+  .status { color: var(--muted); font-size: 12px; margin-left: auto; }
+  .status .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+    background: var(--muted); margin-right: 6px; vertical-align: middle; }
+  .status .dot.on { background: var(--live); animation: pulse 1.4s infinite; }
+  @keyframes pulse { 50% { opacity: .3; } }
+  main { display: grid; grid-template-columns: minmax(300px, 420px) 1fr; gap: 16px; padding: 16px; }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+  #games { display: flex; flex-direction: column; gap: 10px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 10px 12px; cursor: pointer; }
+  .card:hover, .card.sel { border-color: var(--accent); }
+  .card .top { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+  .card .top .live { color: var(--live); font-weight: 600; }
+  .row { display: flex; align-items: center; gap: 10px; padding: 3px 0; }
+  .row img { width: 28px; height: 28px; object-fit: contain; }
+  .row .name { flex: 1; }
+  .row .rec { color: var(--muted); font-size: 12px; margin-left: 6px; }
+  .row .score { font-size: 20px; font-weight: 700; min-width: 40px; text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); }
+  .row.lead .score, .row.lead .name { color: var(--win); }
+  .card .bc { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  #detail { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px; min-height: 300px; overflow: hidden; }
+  .empty { color: var(--muted); text-align: center; padding: 40px 10px; }
+  .hdr { display: flex; align-items: center; justify-content: center; gap: 18px; margin-bottom: 8px; flex-wrap: wrap; }
+  .hdr .t { display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 600; }
+  .hdr img { width: 40px; height: 40px; object-fit: contain; }
+  .hdr .big { font-size: 30px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .hdr .mid { text-align: center; color: var(--muted); font-size: 12px; min-width: 90px; }
+  .hdr .mid.live { color: var(--live); font-weight: 600; }
+  h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); margin: 18px 0 8px; }
+  .tablewrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+  th, td { padding: 5px 7px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 500; font-size: 12px; position: sticky; top: 0; background: var(--panel); }
+  th:first-child, td:first-child { text-align: left; position: sticky; left: 0; background: var(--panel); }
+  tr.bench-split td { border-top: 2px solid var(--line); }
+  tr.tot td { font-weight: 700; }
+  td .pos { color: var(--muted); font-size: 11px; margin-left: 4px; }
+  td.dnp { color: var(--muted); text-align: left; font-style: italic; }
+  .pts { font-weight: 700; }
+  .tabs { display: flex; gap: 6px; margin-bottom: 8px; }
+  .tabs button.on { border-color: var(--accent); background: #1f3350; }
+  .leaders { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; }
+  .leader { background: var(--panel2); border-radius: 8px; padding: 8px 10px; }
+  .leader .cat { color: var(--muted); font-size: 11px; text-transform: uppercase; }
+  .leader .who { font-weight: 600; }
+  .leader .val { color: var(--muted); font-size: 12px; }
+  .cmp td:nth-child(2) { text-align: center; color: var(--muted); }
+  .cmp td:first-child, .cmp td:last-child { width: 30%; }
+  .cmp td:last-child { text-align: right; }
+  .err { background: #3a1d1d; border: 1px solid #6e2a2a; color: #ffb4b4; border-radius: 8px; padding: 10px; margin: 0 16px; display: none; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🏀 NBA Live</h1>
+  <button id="prev" title="Previous day">◀</button>
+  <input type="date" id="date">
+  <button id="next" title="Next day">▶</button>
+  <button id="today">Today</button>
+  <button id="refresh" title="Refresh now">↻</button>
+  <span class="status"><span class="dot" id="dot"></span><span id="upd">Loading…</span></span>
+</header>
+<div class="err" id="err"></div>
+<main>
+  <section id="games"></section>
+  <section id="detail"><div class="empty">Click a game to see the box score.</div></section>
+</main>
+
+<script>
+const API = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba";
+const LIVE_MS = 20000;     // refresh time when a game is live
+const IDLE_MS = 120000;    // refresh time when no game is live
+
+let curDate = null;        // "YYYYMMDD" or null = ESPN's "today"
+let selId = null;          // selected game id
+let boxTab = 0;            // which team tab in the box score
+let timer = null;
+let events = [];
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+
+const toInput = (d) => `${d.slice(0,4)}-${d.slice(4,6)}-${d.slice(6,8)}`;
+const fromInput = (v) => v.replaceAll("-", "");
+function shift(d, n) {
+  const dt = new Date(+d.slice(0,4), +d.slice(4,6) - 1, +d.slice(6,8) + n);
+  return `${dt.getFullYear()}${String(dt.getMonth()+1).padStart(2,"0")}${String(dt.getDate()).padStart(2,"0")}`;
+}
+
+async function getJSON(url) {
+  const r = await fetch(url, { cache: "no-store" });
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  return r.json();
+}
+
+function showErr(msg) { const e = $("err"); e.textContent = msg; e.style.display = msg ? "block" : "none"; }
+
+function statusText(ev) {
+  const st = ev.status?.type || {};
+  if (st.state === "pre") {
+    return new Date(ev.date).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  }
+  return st.shortDetail || st.detail || "";
+}
+
+function sides(comp) {
+  const c = comp?.competitors || [];
+  const away = c.find(x => x.homeAway === "away") || c[0] || {};
+  const home = c.find(x => x.homeAway === "home") || c[1] || {};
+  return { away, home };
+}
+
+function teamRow(t, lead, showScore) {
+  const team = t.team || {};
+  const rec = t.records?.[0]?.summary || "";
+  return `<div class="row ${lead ? "lead" : ""}">
+    <img src="${esc(team.logo)}" alt="" loading="lazy">
+    <span class="name">${esc(team.shortDisplayName || team.displayName)}<span class="rec">${esc(rec)}</span></span>
+    <span class="score">${showScore ? esc(t.score) : ""}</span>
+  </div>`;
+}
+
+function renderGames() {
+  const box = $("games");
+  if (!events.length) { box.innerHTML = `<div class="empty">No games on this day.</div>`; return; }
+  box.innerHTML = events.map(ev => {
+    const comp = ev.competitions?.[0];
+    const { away, home } = sides(comp);
+    const state = ev.status?.type?.state;
+    const show = state !== "pre";
+    const a = +away.score || 0, h = +home.score || 0;
+    const bc = (comp?.broadcasts || []).flatMap(b => b.names || []).join(", ");
+    return `<div class="card ${ev.id === selId ? "sel" : ""}" data-id="${esc(ev.id)}">
+      <div class="top"><span class="${state === "in" ? "live" : ""}">${state === "in" ? "● " : ""}${esc(statusText(ev))}</span>
+      <span>${esc(comp?.notes?.[0]?.headline || "")}</span></div>
+      ${teamRow(away, show && a > h, show)}
+      ${teamRow(home, show && h > a, show)}
+      ${bc ? `<div class="bc">📺 ${esc(bc)}</div>` : ""}
+    </div>`;
+  }).join("");
+  box.querySelectorAll(".card").forEach(el => el.onclick = () => {
+    selId = el.dataset.id; boxTab = 0; renderGames(); loadBox();
+  });
+}
+
+async function loadScores() {
+  try {
+    const url = `${API}/scoreboard` + (curDate ? `?dates=${curDate}` : "");
+    const data = await getJSON(url);
+    events = data.events || [];
+    if (!curDate) {
+      const d = data.day?.date || (events[0]?.date ? new Date(events[0].date).toISOString().slice(0,10) : null);
+      if (d) $("date").value = d;
+    } else {
+      $("date").value = toInput(curDate);
+    }
+    showErr("");
+    renderGames();
+    if (selId && events.some(e => e.id === selId)) loadBox(true);
+    const anyLive = events.some(e => e.status?.type?.state === "in");
+    $("dot").classList.toggle("on", anyLive);
+    $("upd").textContent = `${anyLive ? "Live · " : ""}Updated ${new Date().toLocaleTimeString()}`;
+    schedule(anyLive ? LIVE_MS : IDLE_MS);
+  } catch (e) {
+    showErr(`Could not load scores (${e.message}). Check your internet. If you opened this file from a folder and it keeps failing, see the note at the bottom of the file.`);
+    $("upd").textContent = "Error";
+    schedule(LIVE_MS);
+  }
+}
+
+function schedule(ms) { clearTimeout(timer); timer = setTimeout(loadScores, ms); }
+
+// ---------- Box score ----------
+async function loadBox(quiet) {
+  const id = selId;
+  const det = $("detail");
+  if (!quiet) det.innerHTML = `<div class="empty">Loading box score…</div>`;
+  try {
+    const data = await getJSON(`${API}/summary?event=${id}`);
+    if (id !== selId) return; // user clicked another game
+    renderBox(data);
+  } catch (e) {
+    if (!quiet) det.innerHTML = `<div class="empty">Could not load box score (${esc(e.message)}).</div>`;
+  }
+}
+
+function renderBox(data) {
+  const ev = events.find(e => e.id === selId) || {};
+  const comp = data.header?.competitions?.[0] || ev.competitions?.[0] || {};
+  const { away, home } = sides(comp);
+  const st = comp.status?.type || ev.status?.type || {};
+  const isLive = st.state === "in";
+  const isPre = st.state === "pre";
+  const mid = isPre ? statusText(ev) : (st.shortDetail || st.detail || "");
+
+  let html = `<div class="hdr">
+    <span class="t"><img src="${esc(away.team?.logos?.[0]?.href || away.team?.logo)}" alt="">${esc(away.team?.abbreviation)}</span>
+    <span class="big">${isPre ? "" : esc(away.score)}</span>
+    <span class="mid ${isLive ? "live" : ""}">${isLive ? "● " : ""}${esc(mid)}</span>
+    <span class="big">${isPre ? "" : esc(home.score)}</span>
+    <span class="t">${esc(home.team?.abbreviation)}<img src="${esc(home.team?.logos?.[0]?.href || home.team?.logo)}" alt=""></span>
+  </div>`;
+
+  // Line score (points per quarter)
+  const ls = (t) => (t.linescores || []).map(q => q.displayValue ?? q.value ?? "");
+  const la = ls(away), lh = ls(home);
+  const nq = Math.max(la.length, lh.length);
+  if (nq) {
+    const qh = Array.from({ length: nq }, (_, i) => i < 4 ? `Q${i+1}` : (nq > 5 ? `OT${i-3}` : "OT"));
+    html += `<div class="tablewrap"><table><tr><th></th>${qh.map(q => `<th>${q}</th>`).join("")}<th>T</th></tr>
+      <tr><td>${esc(away.team?.abbreviation)}</td>${la.map(v => `<td>${esc(v)}</td>`).join("")}<td class="pts">${esc(away.score)}</td></tr>
+      <tr><td>${esc(home.team?.abbreviation)}</td>${lh.map(v => `<td>${esc(v)}</td>`).join("")}<td class="pts">${esc(home.score)}</td></tr>
+    </table></div>`;
+  }
+
+  // Game leaders
+  const leaders = (data.leaders || []).flatMap(t =>
+    (t.leaders || []).map(cat => ({ team: t.team?.abbreviation, cat: cat.displayName, l: cat.leaders?.[0] })))
+    .filter(x => x.l);
+  if (leaders.length) {
+    html += `<h3>Leaders</h3><div class="leaders">` + leaders.map(x => `<div class="leader">
+      <div class="cat">${esc(x.team)} · ${esc(x.cat)}</div>
+      <div class="who">${esc(x.l.athlete?.shortName || x.l.athlete?.displayName)}</div>
+      <div class="val">${esc(x.l.displayValue)}</div></div>`).join("") + `</div>`;
+  }
+
+  // Player box score
+  const teams = data.boxscore?.players || [];
+  if (teams.length) {
+    if (boxTab >= teams.length) boxTab = 0;
+    html += `<h3>Box score</h3><div class="tabs">` + teams.map((t, i) =>
+      `<button data-tab="${i}" class="${i === boxTab ? "on" : ""}">${esc(t.team?.displayName || t.team?.abbreviation)}</button>`).join("") + `</div>`;
+    html += playerTable(teams[boxTab]);
+  } else if (isPre) {
+    html += `<div class="empty">The game has not started. The box score will show here when it starts.</div>`;
+  }
+
+  // Team stats comparison
+  const ts = data.boxscore?.teams || [];
+  if (ts.length === 2 && !isPre) {
+    const A = ts.find(t => t.homeAway === "away") || ts[0];
+    const H = ts.find(t => t.homeAway === "home") || ts[1];
+    const rows = (A.statistics || []).map(s => {
+      const h = (H.statistics || []).find(x => x.name === s.name);
+      return `<tr><td>${esc(s.displayValue)}</td><td>${esc(s.label || s.abbreviation || s.name)}</td><td>${esc(h?.displayValue ?? "")}</td></tr>`;
+    }).join("");
+    if (rows) html += `<h3>Team stats</h3><table class="cmp"><tr><th>${esc(A.team?.abbreviation)}</th><th></th><th style="text-align:right">${esc(H.team?.abbreviation)}</th></tr>${rows}</table>`;
+  }
+
+  $("detail").innerHTML = html;
+  $("detail").querySelectorAll(".tabs button").forEach(b => b.onclick = () => { boxTab = +b.dataset.tab; renderBox(data); });
+}
+
+function playerTable(t) {
+  const g = t.statistics?.[0];
+  if (!g) return `<div class="empty">No player stats yet.</div>`;
+  const labels = g.labels || g.names || [];
+  const ptsIdx = labels.indexOf("PTS");
+  const ath = g.athletes || [];
+  const starters = ath.filter(a => a.starter);
+  const bench = ath.filter(a => !a.starter);
+  const row = (a, first) => {
+    const name = a.athlete?.shortName || a.athlete?.displayName || "";
+    const pos = a.athlete?.position?.abbreviation || "";
+    const cls = first ? ` class="bench-split"` : "";
+    if (a.didNotPlay || !(a.stats || []).length) {
+      return `<tr${cls}><td>${esc(name)}<span class="pos">${esc(pos)}</span></td><td class="dnp" colspan="${labels.length}">${esc(a.reason || "DNP")}</td></tr>`;
+    }
+    return `<tr${cls}><td>${esc(name)}<span class="pos">${esc(pos)}</span></td>${a.stats.map((v, i) =>
+      `<td class="${i === ptsIdx ? "pts" : ""}">${esc(v)}</td>`).join("")}</tr>`;
+  };
+  let body = starters.map(a => row(a, false)).join("") + bench.map((a, i) => row(a, i === 0 && starters.length)).join("");
+  if ((g.totals || []).length) {
+    body += `<tr class="tot"><td>Team</td>${g.totals.map(v => `<td>${esc(v)}</td>`).join("")}</tr>`;
+  }
+  return `<div class="tablewrap"><table><tr><th>Player</th>${labels.map(l => `<th>${esc(l)}</th>`).join("")}</tr>${body}</table></div>`;
+}
+
+// ---------- Controls ----------
+$("prev").onclick = () => { curDate = shift(curDate || fromInput($("date").value), -1); selId = null; resetDetail(); loadScores(); };
+$("next").onclick = () => { curDate = shift(curDate || fromInput($("date").value), 1); selId = null; resetDetail(); loadScores(); };
+$("today").onclick = () => { curDate = null; selId = null; resetDetail(); loadScores(); };
+$("refresh").onclick = () => loadScores();
+$("date").onchange = (e) => { if (e.target.value) { curDate = fromInput(e.target.value); selId = null; resetDetail(); loadScores(); } };
+function resetDetail() { $("detail").innerHTML = `<div class="empty">Click a game to see the box score.</div>`; }
+
+// Refresh at once when you come back to the tab
+document.addEventListener("visibilitychange", () => { if (!document.hidden) loadScores(); });
+
+loadScores();
+
+/* NOTE
+   Data comes from ESPN's free, unofficial API (no key). It can change without notice.
+   If the page shows "Could not load scores" when you open it by double-click,
+   run a small local server in this folder and open it from there:
+       python -m http.server 8000
+   then go to http://localhost:8000/index.html
+*/
+</script>
+</body>
+</html>
